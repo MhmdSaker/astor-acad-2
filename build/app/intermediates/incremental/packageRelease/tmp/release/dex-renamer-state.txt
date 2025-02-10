@@ -1,4 +1,0 @@
-#Mon Feb 10 02:15:46 EET 2025
-base.0=/Users/omarelgamal/Downloads/astor_acad_1-main/build/app/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-path.0=classes.dex
-renamed.0=classes.dex
