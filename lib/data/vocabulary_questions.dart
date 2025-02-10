@@ -1,0 +1,302 @@
+import '../models/practice_question.dart';
+
+class VocabularyQuestions {
+  static Map<String, List<PracticeQuestion>> questions = {
+    'Beginner': [
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'House',
+        meaning: 'A building for human habitation',
+        options: [
+          'A type of vehicle',
+          'A building for living',
+          'A kind of food',
+          'A piece of furniture'
+        ],
+        correct: 1,
+        level: 'Beginner',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Car',
+        meaning: 'A road vehicle',
+        options: [
+          'A flying machine',
+          'A water vessel',
+          'A road vehicle',
+          'A building'
+        ],
+        correct: 2,
+        level: 'Beginner',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Book',
+        meaning: 'A written or printed work',
+        options: [
+          'A digital device',
+          'A written work',
+          'A type of food',
+          'A piece of clothing'
+        ],
+        correct: 1,
+        level: 'Beginner',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Food',
+        meaning: 'Something that people eat',
+        options: [
+          'Something to wear',
+          'Something to drink',
+          'Something to eat',
+          'Something to read'
+        ],
+        correct: 2,
+        level: 'Beginner',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Water',
+        meaning: 'A clear liquid for drinking',
+        options: [
+          'A clear liquid',
+          'A hot drink',
+          'A sweet drink',
+          'A colored liquid'
+        ],
+        correct: 0,
+        level: 'Beginner',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Phone',
+        meaning: 'A device for communication',
+        options: [
+          'A communication device',
+          'A kitchen tool',
+          'A piece of furniture',
+          'A type of food'
+        ],
+        correct: 0,
+        level: 'Beginner',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Chair',
+        meaning: 'A piece of furniture for sitting',
+        options: [
+          'A type of food',
+          'A piece of clothing',
+          'Something to sit on',
+          'A type of drink'
+        ],
+        correct: 2,
+        level: 'Beginner',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Bed',
+        meaning: 'A piece of furniture for sleeping',
+        options: [
+          'For eating',
+          'For sleeping',
+          'For working',
+          'For playing'
+        ],
+        correct: 1,
+        level: 'Beginner',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Door',
+        meaning: 'An entrance or exit',
+        options: [
+          'A window',
+          'A wall',
+          'An entrance',
+          'A floor'
+        ],
+        correct: 2,
+        level: 'Beginner',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Window',
+        meaning: 'An opening for light and air',
+        options: [
+          'For entering',
+          'For light and air',
+          'For storage',
+          'For decoration'
+        ],
+        correct: 1,
+        level: 'Beginner',
+      ),
+    ],
+    'Intermediate': [
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Procrastinate',
+        meaning: 'To delay doing something',
+        options: ['To delay', 'To hurry', 'To finish', 'To start'],
+        correct: 0,
+        level: 'Intermediate',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Ambitious',
+        meaning: 'Having a strong desire for success',
+        options: ['Lazy', 'Determined', 'Fearful', 'Careless'],
+        correct: 1,
+        level: 'Intermediate',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Convenient',
+        meaning: 'Suitable and easy to use',
+        options: ['Difficult', 'Complicated', 'Easy to use', 'Expensive'],
+        correct: 2,
+        level: 'Intermediate',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Enthusiasm',
+        meaning: 'Intense and eager enjoyment',
+        options: ['Sadness', 'Boredom', 'Excitement', 'Anger'],
+        correct: 2,
+        level: 'Intermediate',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Generous',
+        meaning: 'Willing to give and share',
+        options: ['Giving', 'Selfish', 'Greedy', 'Mean'],
+        correct: 0,
+        level: 'Intermediate',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Hesitate',
+        meaning: 'To pause before acting',
+        options: ['To rush', 'To pause', 'To stop', 'To run'],
+        correct: 1,
+        level: 'Intermediate',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Mysterious',
+        meaning: 'Difficult to understand or explain',
+        options: ['Clear', 'Simple', 'Unknown', 'Obvious'],
+        correct: 2,
+        level: 'Intermediate',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Opportunity',
+        meaning: 'A favorable time or chance',
+        options: ['Problem', 'Chance', 'Difficulty', 'Barrier'],
+        correct: 1,
+        level: 'Intermediate',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Reliable',
+        meaning: 'Consistently good in quality or performance',
+        options: ['Trustworthy', 'Unreliable', 'Weak', 'Poor'],
+        correct: 0,
+        level: 'Intermediate',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Significant',
+        meaning: 'Important or notable',
+        options: ['Minor', 'Small', 'Important', 'Tiny'],
+        correct: 2,
+        level: 'Intermediate',
+      ),
+    ],
+    'Advanced': [
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Ephemeral',
+        meaning: 'Lasting for a very short time',
+        options: ['Lasting forever', 'Short-lived', 'Important', 'Meaningful'],
+        correct: 1,
+        level: 'Advanced',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Ubiquitous',
+        meaning: 'Present or found everywhere',
+        options: ['Rare', 'Everywhere', 'Hidden', 'Unique'],
+        correct: 1,
+        level: 'Advanced',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Pragmatic',
+        meaning: 'Dealing with things sensibly and realistically',
+        options: ['Practical', 'Emotional', 'Theoretical', 'Idealistic'],
+        correct: 0,
+        level: 'Advanced',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Ambiguous',
+        meaning: 'Open to more than one interpretation',
+        options: ['Clear', 'Unclear', 'Simple', 'Direct'],
+        correct: 1,
+        level: 'Advanced',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Meticulous',
+        meaning: 'Showing great attention to detail',
+        options: ['Careless', 'Detailed', 'Quick', 'Messy'],
+        correct: 1,
+        level: 'Advanced',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Eloquent',
+        meaning: 'Fluent and persuasive in speaking',
+        options: ['Silent', 'Articulate', 'Quiet', 'Shy'],
+        correct: 1,
+        level: 'Advanced',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Paradox',
+        meaning: 'A statement that contradicts itself but might be true',
+        options: ['Truth', 'Contradiction', 'Agreement', 'Harmony'],
+        correct: 1,
+        level: 'Advanced',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Quintessential',
+        meaning: 'Representing the most perfect example',
+        options: ['Typical', 'Perfect', 'Common', 'Different'],
+        correct: 1,
+        level: 'Advanced',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Surreptitious',
+        meaning: 'Kept secret, especially because improper',
+        options: ['Open', 'Secret', 'Normal', 'Regular'],
+        correct: 1,
+        level: 'Advanced',
+      ),
+      PracticeQuestion(
+        question: 'Choose the correct meaning',
+        word: 'Philanthropic',
+        meaning: 'Seeking to promote the welfare of others',
+        options: ['Selfish', 'Charitable', 'Greedy', 'Mean'],
+        correct: 1,
+        level: 'Advanced',
+      ),
+    ],
+  };
+} 
