@@ -12,7 +12,8 @@ import '../services/score_service.dart';
 import '../screens/profile_screen.dart';
 import '../screens/voice_chat_screen.dart';
 import '../screens/level_progress_screen.dart';
-import '../screens/pronunciation_practice_screen.dart';
+import 'dart:convert';
+import 'pronunciation_practice_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,11 +24,17 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String selectedLanguage = 'English';
+  String userName = 'Robert Walker';
+  String userBio = 'Language enthusiast';
+  String location = 'New York, USA';
+  String nativeLanguage = 'English';
+  String learningGoal = 'Become fluent in multiple languages';
   late ConfettiController _confettiController;
   bool _hasClaimedReward = false;
   int _streakDays = 0; // Changed to start at 0
   int _totalPoints = 0;
-  DateTime? _lastLoginDate;
+  DateTime? _lastRewardTime;
+  Timer? _rewardTimer;
 
   // Add new streak-related constants
   static const Map<String, int> _streakTiers = {
@@ -39,56 +46,56 @@ class _HomeScreenState extends State<HomeScreen> {
     'Master': 365,
   };
 
-  // Update daily rewards structure with incremental rewards
+  // Update daily rewards structure with more reasonable rewards
   static const Map<int, Map<String, dynamic>> _dailyRewards = {
     1: {
       'title': 'Day 1 - Welcome',
-      'points': 10,
-      'bonus': {'type': 'starter', 'value': 5},
+      'points': 50,
+      'bonus': {'type': 'starter', 'value': 10},
       'description': 'Begin your journey!',
-      'bonusDescription': '+5 Starter Bonus',
+      'bonusDescription': '+10 Starter Bonus',
     },
     2: {
       'title': 'Day 2 - Momentum',
-      'points': 20,
-      'bonus': {'type': 'multiplier', 'value': 1.2},
+      'points': 60,
+      'bonus': {'type': 'multiplier', 'value': 1.1},
       'description': 'Building your streak!',
-      'bonusDescription': '+20% Point Boost',
+      'bonusDescription': '+10% Point Boost',
     },
     3: {
       'title': 'Day 3 - Persistence',
-      'points': 35,
-      'bonus': {'type': 'xp', 'value': 1.3},
+      'points': 75,
+      'bonus': {'type': 'xp', 'value': 1.15},
       'description': 'Halfway there!',
-      'bonusDescription': '+30% XP Boost',
+      'bonusDescription': '+15% XP Boost',
     },
     4: {
       'title': 'Day 4 - Dedication',
-      'points': 50,
-      'bonus': {'type': 'coins', 'value': 1.5},
+      'points': 90,
+      'bonus': {'type': 'multiplier', 'value': 1.2},
       'description': 'Keep pushing!',
-      'bonusDescription': '+50% Coin Earnings',
+      'bonusDescription': '+20% Point Boost',
     },
     5: {
       'title': 'Day 5 - Consistency',
-      'points': 70,
-      'bonus': {'type': 'power', 'value': 2.0},
+      'points': 100,
+      'bonus': {'type': 'power', 'value': 1.25},
       'description': 'Almost there!',
-      'bonusDescription': '2x Power Boost',
+      'bonusDescription': '+25% Power Boost',
     },
     6: {
       'title': 'Day 6 - Excellence',
-      'points': 100,
-      'bonus': {'type': 'all', 'value': 2.5},
+      'points': 125,
+      'bonus': {'type': 'all', 'value': 1.3},
       'description': 'One day to go!',
-      'bonusDescription': '2.5x All Rewards',
+      'bonusDescription': '+30% All Rewards',
     },
     7: {
       'title': 'Day 7 - Achievement',
       'points': 150,
-      'bonus': {'type': 'mega', 'value': 3.0},
+      'bonus': {'type': 'mega', 'value': 1.5},
       'description': 'Weekly streak complete!',
-      'bonusDescription': '3x Mega Boost Pack',
+      'bonusDescription': '+50% Mega Boost Pack',
     },
   };
 
@@ -97,77 +104,115 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _confettiController =
         ConfettiController(duration: const Duration(seconds: 2));
+    _loadUserData();
     _loadStreakData();
-    _loadPoints();
-    _checkAndUpdateStreak(); // Add streak check on init
-    // Refresh points every second
-    Timer.periodic(const Duration(seconds: 1), (_) {
-      _loadPoints();
+    _initializeRewardTimer();
+    Timer.periodic(const Duration(seconds: 1), (_) async {
+      await _loadPoints();
     });
   }
 
   @override
   void dispose() {
+    _rewardTimer?.cancel();
     _confettiController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadStreakData() async {
+  Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _streakDays = prefs.getInt('streak_days') ?? 0;
-      _hasClaimedReward = prefs.getBool(
-              'claimed_streak_reward_${DateTime.now().toIso8601String().split('T')[0]}') ??
-          false;
-      final lastLoginStr = prefs.getString('last_login_date');
-      _lastLoginDate =
-          lastLoginStr != null ? DateTime.parse(lastLoginStr) : null;
+      userName = prefs.getString('user_name') ?? 'Robert Walker';
+      userBio = prefs.getString('user_bio') ?? 'Language enthusiast';
+      location = prefs.getString('location') ?? 'New York, USA';
+      nativeLanguage = prefs.getString('native_language') ?? 'English';
+      learningGoal = prefs.getString('learning_goal') ??
+          'Become fluent in multiple languages';
     });
+  }
+
+  Future<void> _loadStreakData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastRewardTimeStr = prefs.getString('last_reward_time');
+    final savedStreak = prefs.getInt('streak_days') ?? 0;
+
+    setState(() {
+      _streakDays = savedStreak;
+      _lastRewardTime =
+          lastRewardTimeStr != null ? DateTime.parse(lastRewardTimeStr) : null;
+    });
+
+    // Check if reward is available
+    if (_lastRewardTime != null) {
+      final now = DateTime.now();
+      final difference = now.difference(_lastRewardTime!);
+
+      setState(() {
+        _hasClaimedReward = difference.inHours < 24;
+      });
+
+      // Set up timer for next reward
+      if (difference.inHours < 24) {
+        final remainingTime = const Duration(hours: 24) - difference;
+        _rewardTimer?.cancel();
+        _rewardTimer = Timer(remainingTime, () {
+          if (mounted) {
+            setState(() => _hasClaimedReward = false);
+          }
+        });
+      }
+    }
+  }
+
+  void _initializeRewardTimer() {
+    if (_lastRewardTime != null) {
+      final timeSinceLastReward = DateTime.now().difference(_lastRewardTime!);
+      final remainingTime = const Duration(hours: 24) - timeSinceLastReward;
+
+      if (remainingTime.isNegative) {
+        _hasClaimedReward = false;
+      } else {
+        _rewardTimer = Timer(remainingTime, () {
+          setState(() => _hasClaimedReward = false);
+        });
+      }
+    }
   }
 
   Future<void> _checkAndUpdateStreak() async {
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
 
-    if (_lastLoginDate == null) {
+    if (_lastRewardTime == null) {
       // First time login
-      await _updateStreak(prefs, today, 1);
+      await _updateStreak(prefs, now, 1);
       return;
     }
 
-    final lastLogin = DateTime(
-      _lastLoginDate!.year,
-      _lastLoginDate!.month,
-      _lastLoginDate!.day,
-    );
+    final hoursSinceLastReward = now.difference(_lastRewardTime!).inHours;
 
-    final difference = today.difference(lastLogin).inDays;
-
-    if (difference == 1) {
-      // Consecutive day login
-      await _updateStreak(prefs, today, _streakDays + 1);
-    } else if (difference > 1) {
-      // Streak broken
-      await _updateStreak(prefs, today, 1);
-    } else if (difference == 0) {
-      // Same day login - no streak update needed
-      await prefs.setString('last_login_date', today.toIso8601String());
+    if (hoursSinceLastReward < 24) {
+      // Same day - keep streak
+      return;
+    } else if (hoursSinceLastReward <= 48) {
+      // Next day within 48 hours - increment streak
+      await _updateStreak(prefs, now, _streakDays + 1);
+    } else {
+      // More than 48 hours - reset streak
+      await _updateStreak(prefs, now, 1);
     }
   }
 
   Future<void> _updateStreak(
-      SharedPreferences prefs, DateTime loginDate, int newStreak) async {
+      SharedPreferences prefs, DateTime now, int newStreak) async {
     setState(() {
       _streakDays = newStreak;
-      _lastLoginDate = loginDate;
+      _lastRewardTime = now;
       _hasClaimedReward = false;
     });
 
     await prefs.setInt('streak_days', newStreak);
-    await prefs.setString('last_login_date', loginDate.toIso8601String());
-    await prefs.remove(
-        'claimed_streak_reward_${loginDate.toIso8601String().split('T')[0]}');
+    await prefs.setString('last_reward_time', now.toIso8601String());
   }
 
   Future<void> _loadPoints() async {
@@ -181,91 +226,78 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _claimStreakReward() async {
+  Future<void> _claimDailyReward() async {
     if (_hasClaimedReward) return;
 
-    final now = DateTime.now();
-    final today = now.toIso8601String().split('T')[0];
     final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now();
 
-    // Calculate reward points based on streak
-    int rewardPoints = _calculateRewardPoints();
+    // Check if this is first claim or if enough time has passed
+    if (_lastRewardTime == null) {
+      // First time claiming
+      await _updateStreak(prefs, now, 1);
+    } else {
+      final hoursSinceLastReward = now.difference(_lastRewardTime!).inHours;
 
-    await ScoreService.updatePracticeScore(rewardPoints);
+      if (hoursSinceLastReward < 24) {
+        // Too early to claim
+        return;
+      } else if (hoursSinceLastReward <= 48) {
+        // Within 48 hours - maintain streak
+        await _updateStreak(prefs, now, _streakDays + 1);
+      } else {
+        // More than 48 hours - reset streak
+        await _updateStreak(prefs, now, 1);
+      }
+    }
 
+    // Calculate and add points
+    final points = _calculateRewardPoints();
+    await ScoreService.addPoints(points);
+
+    // Update reward status
     setState(() {
       _hasClaimedReward = true;
+      _lastRewardTime = now;
     });
 
-    await prefs.setBool('claimed_streak_reward_$today', true);
-    await _loadPoints();
+    // Save last reward time
+    await prefs.setString('last_reward_time', now.toIso8601String());
 
+    // Set up timer for next reward
+    _rewardTimer?.cancel();
+    _rewardTimer = Timer(const Duration(hours: 24), () {
+      if (mounted) {
+        setState(() => _hasClaimedReward = false);
+      }
+    });
+
+    // Show celebration
     _confettiController.play();
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Congratulations! +$rewardPoints points added to your score!',
-            style: const TextStyle(color: Colors.white),
-          ),
-          backgroundColor: const Color(0xFF4CAF50),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
   }
 
   int _calculateRewardPoints() {
-    final currentDayReward = _getCurrentDayReward();
-    int basePoints = currentDayReward['points'] as int;
-    Map<String, dynamic> bonus =
-        currentDayReward['bonus'] as Map<String, dynamic>;
+    // Base points for daily reward
+    int basePoints = 50;
 
-    // Calculate streak multiplier
-    double streakMultiplier = 1.0;
+    // Bonus points based on streak
+    if (_streakDays >= 7) basePoints += 20; // Week bonus
+    if (_streakDays >= 30) basePoints += 50; // Month bonus
+    if (_streakDays >= 100) basePoints += 100; // Century bonus
+
+    // Multiplier based on streak tier
+    double multiplier = 1.0;
     if (_streakDays >= 365)
-      streakMultiplier = 5.0;
+      multiplier = 2.0; // Master
     else if (_streakDays >= 180)
-      streakMultiplier = 4.0;
+      multiplier = 1.8; // Expert
     else if (_streakDays >= 90)
-      streakMultiplier = 3.0;
+      multiplier = 1.6; // Committed
     else if (_streakDays >= 30)
-      streakMultiplier = 2.0;
-    else if (_streakDays >= 7) streakMultiplier = 1.5;
+      multiplier = 1.4; // Dedicated
+    else if (_streakDays >= 7) multiplier = 1.2; // Consistent
 
-    // Apply bonus based on type
-    double bonusMultiplier = 1.0;
-    switch (bonus['type']) {
-      case 'multiplier':
-      case 'xp':
-      case 'coins':
-      case 'power':
-      case 'all':
-      case 'mega':
-        bonusMultiplier = bonus['value'];
-        break;
-      case 'starter':
-        basePoints += bonus['value'] as int;
-        break;
-    }
-
-    // Calculate weekly streak bonus (additional bonus for completing weeks)
-    int completedWeeks = (_streakDays - 1) ~/ 7;
-    double weeklyBonus =
-        1.0 + (completedWeeks * 0.1); // 10% extra per completed week
-
-    // Add small random bonus (1-20%)
-    double randomBonus = 1.0 + (Random().nextDouble() * 0.2);
-
-    // Calculate final points
-    double finalPoints = basePoints *
-        streakMultiplier *
-        bonusMultiplier *
-        weeklyBonus *
-        randomBonus;
-
-    return finalPoints.round();
+    return (basePoints * multiplier).round();
   }
 
   String _getLevelName(int level) {
@@ -367,8 +399,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Add method to get current day's reward
   Map<String, dynamic> _getCurrentDayReward() {
-    final int currentDay = (_streakDays % 7) + 1;
-    return _dailyRewards[currentDay] ?? _dailyRewards[1]!;
+    // Get the current day in the week (1-7)
+    final dayInWeek = _streakDays % 7;
+    final day = dayInWeek == 0 ? 7 : dayInWeek;
+
+    return _dailyRewards[day] ?? _dailyRewards[1]!;
   }
 
   // Add method to get bonus description with current multipliers
@@ -538,7 +573,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // Update the claim reward button text
   Widget _buildClaimButton(Map<String, dynamic> currentReward) {
     return ElevatedButton(
-      onPressed: _claimStreakReward,
+      onPressed: _claimDailyReward,
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFFFF5A1A),
@@ -592,14 +627,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               width: 40,
                               height: 40,
                               child: GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const ProfileScreen(),
-                                    ),
-                                  );
+                                onTap: () async {
+                                  await _navigateToProfile();
                                 },
                                 child: Container(
                                   decoration: BoxDecoration(
@@ -621,7 +650,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Robert Walker',
+                                  userName,
                                   style: TextStyle(
                                     color: const Color(0xFF141414),
                                     fontSize: 24,
@@ -838,8 +867,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       subtitle: 'Learn to say \'I can see you\' in French',
                       imagePath: 'assets/practice.jpg',
                       backgroundColor: const Color(0xFFE8F5E9),
-                      icon: Icons.school_rounded,
-                      iconColor: const Color(0xFF4CAF50),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -850,17 +877,75 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                     SectionCard(
-                      title: 'AI Chat',
-                      subtitle: 'Have a conversation with AI',
-                      imagePath: 'assets/ai_chat.jpg',
-                      backgroundColor: const Color(0xFFE3F2FD),
-                      icon: Icons.chat_bubble_rounded,
-                      iconColor: const Color(0xFF2F6FED),
+                      title: 'Pronunciation',
+                      subtitle: 'Practice speaking with movie scenes',
+                      imagePath: 'assets/pronunciation.jpg',
+                      backgroundColor: const Color(0xFFF3E5F5),
                       onTap: () {
+                        // Add ripple effect
+                        ScaffoldMessenger.of(context).clearSnackBars();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Opening Pronunciation Practice...'),
+                            duration: Duration(milliseconds: 500),
+                            backgroundColor: Color(0xFFFF5A1A),
+                          ),
+                        );
+
+                        // Navigate with fade transition
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => const ChatScreen(),
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation,
+                                    secondaryAnimation) =>
+                                const PronunciationPracticeScreen(
+                                    level: 'Beginner'),
+                            transitionsBuilder: (context, animation,
+                                secondaryAnimation, child) {
+                              return FadeTransition(
+                                opacity: animation,
+                                child: child,
+                              );
+                            },
+                            transitionDuration:
+                                const Duration(milliseconds: 500),
+                          ),
+                        );
+                      },
+                    ),
+                    SectionCard(
+                      title: 'AI Chat',
+                      subtitle:
+                          'Chat with our AI to practice your language skills',
+                      imagePath: 'assets/ai_chat.jpg',
+                      backgroundColor: const Color(0xFFE3F2FD),
+                      onTap: () {
+                        // Add ripple effect
+                        ScaffoldMessenger.of(context).clearSnackBars();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Opening AI Chat...'),
+                            duration: Duration(milliseconds: 500),
+                            backgroundColor: Color(0xFFFF5A1A),
+                          ),
+                        );
+
+                        // Navigate with fade transition
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder:
+                                (context, animation, secondaryAnimation) =>
+                                    const ChatScreen(),
+                            transitionsBuilder: (context, animation,
+                                secondaryAnimation, child) {
+                              return FadeTransition(
+                                opacity: animation,
+                                child: child,
+                              );
+                            },
+                            transitionDuration:
+                                const Duration(milliseconds: 500),
                           ),
                         );
                       },
@@ -870,8 +955,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       subtitle: 'Learn and play games at the same time',
                       imagePath: 'assets/games.jpg',
                       backgroundColor: const Color(0xFFFFF3E0),
-                      icon: Icons.sports_esports_rounded,
-                      iconColor: const Color(0xFFFFA726),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -886,31 +969,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       subtitle: 'Have a continuous voice conversation',
                       imagePath: 'assets/voice_chat.jpg',
                       backgroundColor: const Color(0xFFE3F2FD),
-                      icon: Icons.mic_rounded,
-                      iconColor: const Color(0xFF2F6FED),
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => const VoiceChatScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    SectionCard(
-                      title: 'Pronunciation Practice',
-                      subtitle: 'Practice with movie scenes',
-                      imagePath: 'assets/pronunciation.jpg',
-                      backgroundColor: const Color(0xFFE8F5E9),
-                      icon: Icons.record_voice_over_rounded,
-                      iconColor: const Color(0xFF4CAF50),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const PronunciationPracticeScreen(
-                                    level: 'Beginner'),
                           ),
                         );
                       },
@@ -1089,5 +1152,129 @@ class _HomeScreenState extends State<HomeScreen> {
     } else {
       return "Legendary streak!";
     }
+  }
+
+  // Add this method to handle account navigation with edit capabilities
+  Future<void> _navigateToProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final initialData = {
+      'userName': prefs.getString('user_name') ?? 'Robert Walker',
+      'userBio': prefs.getString('user_bio') ?? 'Language enthusiast',
+      'location': prefs.getString('location') ?? 'New York, USA',
+      'nativeLanguage': prefs.getString('native_language') ?? 'English',
+      'learningGoal': prefs.getString('learning_goal') ??
+          'Become fluent in multiple languages',
+      'learningGoals': await _getLearningGoals(),
+      'preferredLanguages': await _getPreferredLanguages(),
+      'studyReminders': await _getStudyReminders(),
+      'proficiencyLevels': await _getProficiencyLevels(),
+      'learningStyle': await _getLearningStyle(),
+    };
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProfileScreen(
+          onUpdateProfile: _handleProfileUpdate,
+          initialData: initialData,
+        ),
+      ),
+    );
+  }
+
+  // Add these methods to manage profile data
+  Future<Map<String, dynamic>> _getLearningGoals() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedGoals = prefs.getString('learning_goals');
+    if (savedGoals != null) {
+      return Map<String, dynamic>.from(jsonDecode(savedGoals));
+    }
+    return {
+      'dailyGoal': 20,
+      'weeklyTarget': 5,
+      'focusAreas': ['Speaking', 'Vocabulary', 'Grammar'],
+      'targetLevel': 'B2',
+    };
+  }
+
+  Future<List<String>> _getPreferredLanguages() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedLanguages = prefs.getStringList('preferred_languages');
+    return savedLanguages ?? ['English', 'Spanish', 'French'];
+  }
+
+  Future<Map<String, dynamic>> _getStudyReminders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedReminders = prefs.getString('study_reminders');
+    if (savedReminders != null) {
+      return Map<String, dynamic>.from(jsonDecode(savedReminders));
+    }
+    return {
+      'dailyReminder': true,
+      'weeklyProgress': true,
+      'streakAlert': true,
+      'customTime': '08:00',
+    };
+  }
+
+  Future<Map<String, String>> _getProficiencyLevels() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedLevels = prefs.getString('proficiency_levels');
+    if (savedLevels != null) {
+      return Map<String, String>.from(jsonDecode(savedLevels));
+    }
+    return {
+      'English': 'B2',
+      'Spanish': 'A2',
+      'French': 'A1',
+    };
+  }
+
+  Future<Map<String, dynamic>> _getLearningStyle() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedStyle = prefs.getString('learning_style');
+    if (savedStyle != null) {
+      return Map<String, dynamic>.from(jsonDecode(savedStyle));
+    }
+    return {
+      'preferred': 'Visual',
+      'pacePreference': 'Moderate',
+      'practiceStyle': 'Interactive',
+      'feedbackFrequency': 'High',
+    };
+  }
+
+  // Update the profile handler
+  Future<void> _handleProfileUpdate(Map<String, dynamic> updatedData) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Save updated profile data
+    await prefs.setString('user_name', updatedData['userName']);
+    await prefs.setString('user_bio', updatedData['userBio']);
+    await prefs.setString('location', updatedData['location']);
+    await prefs.setString('native_language', updatedData['nativeLanguage']);
+    await prefs.setString('learning_goal', updatedData['learningGoal']);
+    await prefs.setString(
+        'learning_goals', jsonEncode(updatedData['learningGoals']));
+    await prefs.setStringList('preferred_languages',
+        List<String>.from(updatedData['preferredLanguages']));
+    await prefs.setString(
+        'study_reminders', jsonEncode(updatedData['studyReminders']));
+    await prefs.setString(
+        'proficiency_levels', jsonEncode(updatedData['proficiencyLevels']));
+    await prefs.setString(
+        'learning_style', jsonEncode(updatedData['learningStyle']));
+
+    // Update local state
+    setState(() {
+      selectedLanguage = updatedData['preferredLanguages'][0];
+      userName = updatedData['userName'];
+      userBio = updatedData['userBio'];
+      location = updatedData['location'];
+      nativeLanguage = updatedData['nativeLanguage'];
+      learningGoal = updatedData['learningGoal'];
+    });
   }
 }

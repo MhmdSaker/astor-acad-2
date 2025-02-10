@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../widgets/practice_results_dialog.dart';
 import 'package:string_similarity/string_similarity.dart';
 import 'dart:async';
+import '../services/pronunciation_service.dart';
 
 class PronunciationPracticeScreen extends StatefulWidget {
   final String level;
@@ -100,6 +101,8 @@ class _PronunciationPracticeScreenState
   // Add these properties to track overall statistics
   List<Map<String, dynamic>> sessionStats = [];
 
+  final PronunciationService _pronunciationService = PronunciationService();
+
   @override
   void initState() {
     super.initState();
@@ -145,13 +148,13 @@ class _PronunciationPracticeScreenState
     // Add timeout to automatically stop listening if no speech is detected
     Timer(const Duration(seconds: 10), () {
       if (mounted && isListening && _currentSpeech.isEmpty) {
-        _speechService.stop();
-        _analyzePronunciation(); // This will show the no speech alert
+        _pronunciationService.stop();
+        _analyzePronunciation();
       }
     });
 
     try {
-      await _speechService.listen(
+      await _pronunciationService.startListening(
         onTextRecognized: (text) {
           print('Recognized text: $text');
           setState(() {
@@ -164,10 +167,7 @@ class _PronunciationPracticeScreenState
           print('Silence detected');
           _startSilenceTimer();
         },
-        onError: (error) {
-          print('Speech recognition error: $error');
-          _handleSpeechError(error);
-        },
+        silenceThreshold: const Duration(seconds: 2),
       );
     } catch (e) {
       print('Error starting speech recognition: $e');
@@ -249,7 +249,7 @@ class _PronunciationPracticeScreenState
     final points = _calculatePoints(accuracyPercentage);
 
     // Stop listening before showing results
-    _speechService.stop();
+    _pronunciationService.stop();
 
     setState(() {
       isListening = false;
@@ -1129,7 +1129,7 @@ class _PronunciationPracticeScreenState
   void dispose() {
     _silenceTimer?.cancel();
     _controller.dispose();
-    _speechService.dispose();
+    _pronunciationService.dispose();
     super.dispose();
   }
 

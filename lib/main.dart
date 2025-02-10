@@ -4,6 +4,10 @@ import 'package:provider/provider.dart' as provider;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'theme/theme.dart';
 import 'screens/splash_screen.dart';
+import 'screens/practice_screen.dart';
+import 'screens/games_screen.dart';
+import 'screens/chat_screen.dart';
+import 'screens/profile_screen.dart';
 import 'services/progress_service.dart';
 import 'dart:ui';
 
@@ -60,6 +64,20 @@ class MyApp extends StatelessWidget {
       ),
       debugShowCheckedModeBanner: false,
       home: const SplashScreen(),
+      routes: {
+        '/practice': (context) => const PracticeScreen(),
+        '/games': (context) => const GamesScreen(),
+        '/chat': (context) => const ChatScreen(),
+        '/profile': (context) => ProfileScreen(
+              onUpdateProfile: (Map<String, dynamic> data) async {
+                final progressService = provider.Provider.of<ProgressService>(
+                    context,
+                    listen: false);
+                await progressService.init();
+              },
+              initialData: {'name': ''},
+            ),
+      },
     );
   }
 }

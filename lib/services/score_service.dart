@@ -40,4 +40,23 @@ class ScoreService {
     final currentScore = await getPracticeScore();
     await prefs.setInt(_practiceScoreKey, currentScore + points);
   }
-} 
+
+  static Future<void> addPoints(int points) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Update total score
+    final currentTotal = prefs.getInt(_totalScoreKey) ?? 0;
+    await prefs.setInt(_totalScoreKey, currentTotal + points);
+
+    // Split points between practice and game scores
+    final practicePoints = (points * 0.7).round(); // 70% to practice
+    final gamePoints = points - practicePoints; // Remainder to game
+
+    // Update individual scores
+    final currentPractice = await getPracticeScore();
+    final currentGame = await getGameScore();
+
+    await prefs.setInt(_practiceScoreKey, currentPractice + practicePoints);
+    await prefs.setInt(_gameScoreKey, currentGame + gamePoints);
+  }
+}

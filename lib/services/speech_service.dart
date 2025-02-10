@@ -38,7 +38,6 @@ class SpeechService {
   Future<void> listen({
     required Function(String) onTextRecognized,
     Function()? onSilence,
-    Function(String)? onError,
   }) async {
     if (!_isListening) {
       _isListening = true;
@@ -46,15 +45,12 @@ class SpeechService {
       try {
         await _speech.initialize(
           onStatus: (status) {
-            print('Speech status: $status'); // Debug print
+            debugPrint('Speech status: $status');
             if (status == 'notListening') {
               onSilence?.call();
             }
           },
-          onError: (error) {
-            print('Speech error: $error'); // Debug print
-            onError?.call(error.errorMsg);
-          },
+          onError: (error) => debugPrint('Speech error: $error'),
         );
 
         await _speech.listen(
@@ -63,15 +59,22 @@ class SpeechService {
               onTextRecognized(result.recognizedWords);
             }
           },
+          onSoundLevelChange: (level) {
+            if (level <= 0) {
+              onSilence?.call();
+            }
+          },
+          localeId: 'ar-SA',
           listenFor: const Duration(seconds: 30),
           pauseFor: const Duration(seconds: 3),
-          partialResults: true,
-          listenMode: ListenMode.confirmation,
-          cancelOnError: false,
+          listenOptions: SpeechListenOptions(
+            partialResults: true,
+            cancelOnError: false,
+            listenMode: ListenMode.dictation,
+          ),
         );
       } catch (e) {
-        print('Listen error: $e');
-        onError?.call(e.toString());
+        debugPrint('Listen error: $e');
         _isListening = false;
       }
     }

@@ -6,8 +6,6 @@ class SectionCard extends StatelessWidget {
   final String imagePath;
   final VoidCallback onTap;
   final Color backgroundColor;
-  final IconData? icon;
-  final Color? iconColor;
 
   const SectionCard({
     super.key,
@@ -16,8 +14,6 @@ class SectionCard extends StatelessWidget {
     required this.imagePath,
     required this.onTap,
     this.backgroundColor = Colors.white,
-    this.icon,
-    this.iconColor,
   });
 
   @override
@@ -93,8 +89,8 @@ class SectionCard extends StatelessWidget {
                     ],
                   ),
                   child: Icon(
-                    icon,
-                    color: iconColor ?? Colors.black,
+                    _getIconForTitle(title),
+                    color: _getColorForTitle(title),
                     size: 28,
                   ),
                 ),
